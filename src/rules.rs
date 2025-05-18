@@ -1,17 +1,42 @@
 pub trait Rule {
-    fn apply(left: u8, center: u8, right: u8) -> u8;
+    fn apply(&self, left: u8, center: u8, right: u8) -> u8;
 
     fn states(&self) -> u64;
 }
 
-struct Rule30 {}
+pub struct Rule30;
 
 impl Rule for Rule30 {
-    fn apply(left: u8, center: u8, right: u8) -> u8 {
+    fn apply(&self, left: u8, center: u8, right: u8) -> u8 {
         left ^ (center | right)
     }
 
     fn states(&self) -> u64 {
         todo!()
+    }
+}
+
+pub struct WolframRule {
+    rule_number: u8,
+}
+
+impl WolframRule {
+    pub fn new(rule_number: u8) -> Self {
+        assert!(rule_number <= 255, "rule_number must be between 0 and 255");
+        Self { rule_number }
+    }
+}
+
+impl Rule for WolframRule {
+
+    fn apply(&self, left: u8, center: u8, right: u8) -> u8 {
+        let index = (left << 2) | (center << 1) | right;
+        let bit = (self.rule_number >> index) & 1;
+
+        bit
+    }
+
+    fn states(&self) -> u64 {
+        self.rule_number as u64
     }
 }

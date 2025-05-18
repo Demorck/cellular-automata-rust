@@ -1,16 +1,25 @@
 use crate::line::Row;
 use crate::rules::Rule;
 
-pub struct Automaton<R: Rule> {
-    grid: Vec<Row<R>>,
+pub struct Automaton {
+    grid: Vec<Row>,
     iteration: usize,
+    rule: Box<dyn Rule>
 }
 
-impl<R: Rule> Automaton<R> {
+impl Automaton {
+
+    pub fn new(first_row: Row, rule: Box<dyn Rule>) -> Self {
+        Self {
+            grid: vec![first_row],
+            iteration: 1,
+            rule,
+        }
+    }
 
     pub fn next(&mut self) {
         let last_line = self.grid.last().unwrap();
-        let new_line = last_line.next();
+        let new_line = last_line.next(self.rule.as_ref());
         self.grid.push(new_line);
         self.iteration += 1;
     }
@@ -20,5 +29,13 @@ impl<R: Rule> Automaton<R> {
         for _ in 0..steps {
             self.next();
         }
+    }
+
+    pub fn grid(&self) -> &Vec<Row> {
+        &self.grid
+    }
+
+    pub fn iteration(&self) -> usize {
+        self.iteration
     }
 }
