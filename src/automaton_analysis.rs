@@ -1,4 +1,6 @@
+use std::collections::BTreeMap;
 use crate::automaton::Automaton;
+use crate::cell::Cell;
 
 pub enum DIAGONAL {
     LEFT,
@@ -81,5 +83,36 @@ impl<'a> AutomatonAnalysis<'a> {
         }
 
         Some(result)
+    }
+
+
+    pub fn rightmost_same_state(&self, cell_type: Cell) -> BTreeMap<u16, u16>
+    {
+        let middle = (self.automaton.col() - 1)/2;
+        let mut result: BTreeMap<u16, u16> = BTreeMap::new();
+        for i in 1..self.automaton.max_iteration() {
+            let mut counter: u16 = 1;
+            loop {
+                let index = middle + i - counter as usize;
+                let current_row = self.automaton.grid().get(i).unwrap();
+                let current_cell = match current_row.get(index) {
+                    None => {
+                        println!("Cell not found: {} at row: {} and counter {}", index, i, counter);
+                        break;
+                    }
+                    Some(p) => { p }
+                };
+
+                if current_cell.state() == cell_type.state() {
+                    counter += 1;
+                } else {
+                    break;
+                }
+            }
+
+            if !result.contains_key(&(counter)) { result.insert(counter, i as u16); };
+        }
+
+        result
     }
 }

@@ -4,7 +4,7 @@ use cellular_automaton::cell::Cell;
 use cellular_automaton::line::Row;
 use cellular_automaton::rules::{Rule30, WolframRule};
 
-const ITERATION: usize = 15;
+const ITERATION: usize = 20_000;
 
 fn main() {
     // Taille de la ligne
@@ -21,18 +21,22 @@ fn main() {
     let rule = Box::new(WolframRule::new(30));
     // Initialisation de l'automate avec une seule ligne
     let mut automaton = Automaton::new(first_row, rule);
-    // Génère 15 itérations
-    automaton.evolve(20);
+    automaton.evolve(ITERATION as u64);
 
     // Affichage
-    for row in automaton.grid().iter().rev() {
-        println!("{}", row.to_string());
-    }
+    // for row in automaton.grid().iter().rev() {
+    //     println!("{}", row.to_string());
+    // }
 
     // Affichage de la diagonale gauche
-    let analysis = AutomatonAnalysis::new(&automaton);
-    let diagonals = analysis.extract_diagonals(DIAGONAL::LEFT);
-    for (i, diag) in diagonals.iter().enumerate() {
-        println!("Diagonal {}: {:?}", i, diag);
-    }
+    // let analysis = AutomatonAnalysis::new(&automaton);
+    // let diagonals = analysis.extract_diagonals(DIAGONAL::LEFT);
+    // for (i, diag) in diagonals.iter().enumerate() {
+    //     println!("Diagonal {}: {:?}", i, diag);
+    // }
+    //
+    // let cell_type = Cell::new(1);
+    // let a = analysis.rightmost_same_state(cell_type);
+    //
+    // println!("{:?}", a);
 }

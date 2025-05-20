@@ -1,3 +1,4 @@
+use std::cmp::max;
 use crate::line::Row;
 use crate::rules::Rule;
 
@@ -45,5 +46,9 @@ impl Automaton {
 
     pub fn col(&self) -> usize {
         self.col
+    }
+
+    pub fn max_iteration(&self) -> usize {
+        max(self.col, self.iteration)
     }
 }
