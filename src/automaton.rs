@@ -1,19 +1,23 @@
 use crate::line::Row;
 use crate::rules::Rule;
 
+///
 pub struct Automaton {
     grid: Vec<Row>,
     iteration: usize,
-    rule: Box<dyn Rule>
+    rule: Box<dyn Rule>,
+    col: usize,
 }
 
 impl Automaton {
 
     pub fn new(first_row: Row, rule: Box<dyn Rule>) -> Self {
+        let col = first_row.len();
         Self {
             grid: vec![first_row],
             iteration: 1,
             rule,
+            col
         }
     }
 
@@ -37,5 +41,9 @@ impl Automaton {
 
     pub fn iteration(&self) -> usize {
         self.iteration
+    }
+
+    pub fn col(&self) -> usize {
+        self.col
     }
 }

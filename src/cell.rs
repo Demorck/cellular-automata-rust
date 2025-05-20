@@ -18,8 +18,8 @@ impl Cell {
 
     pub fn display(&self) -> char {
         match self.state {
-            0 => ' ',
-            1 => '█',
+            0 => '.',
+            1 => '#',
             _ => '?',
         }
     }

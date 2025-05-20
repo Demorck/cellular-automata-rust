@@ -31,7 +31,10 @@ impl<'a> AutomatonAnalysis<'a> {
 
         for i in 1..iteration {
             let diag = self.extract_diagonal(i, &diagonal);
-            diagonals.push(diag);
+            match diag {
+                None => { break; }
+                Some(d) => { diagonals.push(d); }
+            }
         }
 
         diagonals
@@ -41,18 +44,30 @@ impl<'a> AutomatonAnalysis<'a> {
         &self,
         n: usize,
         diagonal: &DIAGONAL,
-    ) -> Vec<u8> {
-        let grid = &self.automaton.grid();
+    ) -> Option<Vec<u8>> {
+        let grid = self.automaton.grid();
         let iteration = self.automaton.iteration();
+        let middle = (self.automaton.col() - 1)/2;
         let mut result = Vec::new();
 
-        let multiplier = 1;
+        if n > middle { return None; }
+
+        let multiplier = match diagonal {
+            DIAGONAL::LEFT => { self.multiplier_left },
+            DIAGONAL::RIGHT => { self.multiplier_right },
+        };
+
         let mut offset = 0;
 
         for i in (n..iteration).step_by(multiplier) {
+            if n + offset > middle || (middle + offset) > self.automaton.col()
+            {
+                break;
+            }
+
             let col = match diagonal {
-                DIAGONAL::LEFT => iteration + 1 - offset,
-                DIAGONAL::RIGHT => iteration + 1 + offset
+                DIAGONAL::LEFT => middle - offset,
+                DIAGONAL::RIGHT => middle + offset
             };
 
             if let Some(row) = grid.get(i) {
@@ -65,6 +80,6 @@ impl<'a> AutomatonAnalysis<'a> {
             offset += 1;
         }
 
-        result
+        Some(result)
     }
 }
