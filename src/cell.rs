@@ -1,7 +1,15 @@
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Cell {
     state: u8,
 }
+
+
+impl PartialEq for Cell {
+    fn eq(&self, other: &Self) -> bool {
+        self.state == other.state
+    }
+}
+
 
 impl Cell {
     pub fn new(state: u8) -> Cell {

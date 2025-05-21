@@ -1,10 +1,10 @@
 use cellular_automaton::automaton::Automaton;
 use cellular_automaton::automaton_analysis::{AutomatonAnalysis, DIAGONAL};
 use cellular_automaton::cell::Cell;
-use cellular_automaton::line::Row;
+use cellular_automaton::row::Row;
 use cellular_automaton::rules::{Rule30, WolframRule};
 
-const ITERATION: usize = 20_000;
+const ITERATION: usize = 100;
 
 fn main() {
     // Taille de la ligne
@@ -23,20 +23,13 @@ fn main() {
     let mut automaton = Automaton::new(first_row, rule);
     automaton.evolve(ITERATION as u64);
 
-    // Affichage
-    // for row in automaton.grid().iter().rev() {
-    //     println!("{}", row.to_string());
-    // }
+    let mut analysis = AutomatonAnalysis::new(&automaton);
+    analysis.extract_diagonals(DIAGONAL::LEFT);
 
-    // Affichage de la diagonale gauche
-    // let analysis = AutomatonAnalysis::new(&automaton);
-    // let diagonals = analysis.extract_diagonals(DIAGONAL::LEFT);
-    // for (i, diag) in diagonals.iter().enumerate() {
-    //     println!("Diagonal {}: {:?}", i, diag);
-    // }
-    //
-    // let cell_type = Cell::new(1);
-    // let a = analysis.rightmost_same_state(cell_type);
-    //
-    // println!("{:?}", a);
+    let a = analysis.extract_patterns(DIAGONAL::LEFT, over_two);
+
+    println!("{:?}", a);
+
 }
+
+fn over_two(x: usize) -> usize { x / 2 }

@@ -1,6 +1,7 @@
 use std::collections::BTreeMap;
 use crate::automaton::Automaton;
 use crate::cell::Cell;
+use crate::utils::is_periodic;
 
 pub enum DIAGONAL {
     LEFT,
@@ -10,6 +11,13 @@ pub enum DIAGONAL {
 
 pub struct AutomatonAnalysis<'a> {
     automaton: &'a Automaton,
+
+    diagonals_left: Vec<Vec<&'a Cell>>,
+    diagonals_right: Vec<Vec<&'a Cell>>,
+
+    current_period_left: usize,
+    current_period_right: usize,
+
     multiplier_left: usize,
     multiplier_right: usize,
 }
@@ -18,6 +26,13 @@ impl<'a> AutomatonAnalysis<'a> {
     pub fn new(automaton: &'a Automaton) -> Self {
         Self {
             automaton,
+
+            diagonals_left: vec![],
+            diagonals_right: vec![],
+
+            current_period_left: 1,
+            current_period_right: 1,
+
             multiplier_left: 1,
             multiplier_right: 1
         }
@@ -25,28 +40,30 @@ impl<'a> AutomatonAnalysis<'a> {
 
     /// Extrait les diagonales et retourne un Vec<u8> pour chaque diagonale
     pub fn extract_diagonals(
-        &self,
+        &mut self,
         diagonal: DIAGONAL,
-    ) -> Vec<Vec<u8>> {
+    ) {
         let iteration = self.automaton.iteration();
-        let mut diagonals = Vec::new();
 
         for i in 1..iteration {
             let diag = self.extract_diagonal(i, &diagonal);
             match diag {
                 None => { break; }
-                Some(d) => { diagonals.push(d); }
+                Some(d) => {
+                    match diagonal {
+                        DIAGONAL::LEFT => { self.diagonals_left.push(d); }
+                        DIAGONAL::RIGHT => { self.diagonals_right.push(d);}
+                    }
+                }
             }
         }
-
-        diagonals
     }
 
     fn extract_diagonal(
         &self,
         n: usize,
         diagonal: &DIAGONAL,
-    ) -> Option<Vec<u8>> {
+    ) -> Option<Vec<&'a Cell>> {
         let grid = self.automaton.grid();
         let iteration = self.automaton.iteration();
         let middle = (self.automaton.col() - 1)/2;
@@ -75,7 +92,7 @@ impl<'a> AutomatonAnalysis<'a> {
             if let Some(row) = grid.get(i) {
                 if col < row.len() {
                     let cell = row.get(col).unwrap();
-                    result.push(cell.state());
+                    result.push(cell);
                 }
             }
 
@@ -114,5 +131,74 @@ impl<'a> AutomatonAnalysis<'a> {
         }
 
         result
+    }
+
+    pub fn extract_patterns(&mut self, type_diagonal: DIAGONAL, offset_f: fn(usize) -> usize) -> Vec<(Vec<&Cell>, usize, usize)>
+    {
+        let mut result = Vec::new();
+
+        let diagonals = match type_diagonal {
+            DIAGONAL::LEFT => { &self.diagonals_left }
+            DIAGONAL::RIGHT => { &self.diagonals_right }
+        };
+
+        let mut period = match type_diagonal {
+            DIAGONAL::LEFT => { self.current_period_left }
+            DIAGONAL::RIGHT => { self.current_period_right }
+        };
+
+        let mut breaked = false;
+
+        for i in 0..diagonals.len() {
+            if breaked { break; }
+            let current_diagonal = diagonals.get(i).unwrap();
+            let offset = offset_f(i);
+
+            loop {
+                let pattern = self.find_pattern(current_diagonal.clone(), offset, period);
+
+                match pattern {
+                    (None, None, None) => {
+                        period *= 2;
+                        if offset + period > current_diagonal.len() {
+                            breaked = true;
+                            break;
+                        }
+                    }
+                    (Some(p), Some(o), Some(t)) => {
+                        result.push((p, o, t));
+                    }
+                    (_, _, _) => {
+                        panic!("AAAAAAAAAAAa")
+                    }
+                }
+            }
+        }
+
+        result
+    }
+
+
+
+    fn find_pattern<'b>(&self, mut diagonal: Vec<&'b Cell>, start_offset: usize, period: usize) -> (Option<Vec<&'b Cell>>, Option<usize>, Option<usize>) {
+        let mut offset = start_offset;
+
+        if diagonal.len() <= start_offset {
+            return (None, None, None);
+        }
+        diagonal.drain(0..start_offset);
+
+        while   diagonal.len() > 1 &&
+            diagonal.len() > period
+        {
+            if is_periodic(&diagonal, period) {
+                diagonal.truncate(period);
+                return (Some(diagonal), Some(period), Some(offset));
+            }
+            diagonal.remove(0);
+            offset += 1;
+        }
+
+        (None, None, None)
     }
 }

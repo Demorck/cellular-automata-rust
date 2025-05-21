@@ -1,0 +1,61 @@
+@startuml
+
+enum DIAGONAL {
+    LEFT,
+    RIGHT
+}
+
+class AutomatonAnalysis<'a: lifetime> {
+    - current_period_left: usize
+    - current_period_right: usize
+    - multiplier_left: usize
+    - multiplier_right: usize
+    --
+    + extract_diagonals(type: DIAGONAL)
+    + rightmost_same_sate(cell_type: Cell) : BTreeMap<u16, u16>
+    + extract_patterns(type_diagonal: DIAGONAL, offset_f: fn(usize) -> usize) : Vec<(Vec<U+003C>&Cell>, usize, usize)>
+
+    ==
+    - extract_diagonal(n: usize, type: DIAGONAL)
+    - find_pattern(diagonal: Vec<&Cell>, start_offset: usize, period: usize) : (Option<Vec<&Cell>>, Option<usize>, Option<usize>)
+}
+
+class Automaton {
+    - iteration: usize
+    - col: usize
+    --
+    + next()
+    + evolve(steps: u64)
+}
+
+
+class Row {
+    - iteration: usize
+    --
+    + get(index: usize) : Option<U+003C>&Cell<U+003E>
+    + next(rule: Rule) : Row
+}
+
+class Cell {
+    - state: u8
+}
+
+
+interface Rule {
+    + apply(left: u8, center: u8, right: u8)
+    + states() : u64
+}
+
+class WolframRule implements Rule {
+    - rule_number: u8
+}
+
+
+Automaton -- "*" Row
+Row -- "*" Cell
+Automaton -- "1" Rule
+AutomatonAnalysis -- "1" Automaton
+AutomatonAnalysis -- "*" Cell
+
+
+@enduml

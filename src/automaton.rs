@@ -1,5 +1,5 @@
 use std::cmp::max;
-use crate::line::Row;
+use crate::row::Row;
 use crate::rules::Rule;
 
 ///
