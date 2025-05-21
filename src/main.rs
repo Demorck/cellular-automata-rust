@@ -4,7 +4,7 @@ use cellular_automaton::cell::Cell;
 use cellular_automaton::row::Row;
 use cellular_automaton::rules::{Rule30, WolframRule};
 
-const ITERATION: usize = 100;
+const ITERATION: usize = 10_000;
 
 fn main() {
     // Taille de la ligne
@@ -26,10 +26,21 @@ fn main() {
     let mut analysis = AutomatonAnalysis::new(&automaton);
     analysis.extract_diagonals(DIAGONAL::LEFT);
 
-    let a = analysis.extract_patterns(DIAGONAL::LEFT, over_two);
+    let a = analysis.extract_patterns(DIAGONAL::LEFT, zero);
 
-    println!("{:?}", a);
+    let mut counter = 0;
+    for (d, p, o) in a {
+        counter += 1;
+        let s: String = d.iter().map(|&cell| cell.state().to_string()).collect();
+        println!("Diagonal {}: {}, Period:  {}, Offset: {}", counter, s, p, o);
+    }
 
 }
 
-fn over_two(x: usize) -> usize { x / 2 }
+fn over_two(x: usize) -> usize {
+    if x > 100 { x / 2 } else { x }
+}
+
+fn identite(x: usize) -> usize { x }
+
+fn zero(x: usize) -> usize { 0 }

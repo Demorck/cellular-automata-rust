@@ -11,7 +11,6 @@ pub struct Automaton {
 }
 
 impl Automaton {
-
     pub fn new(first_row: Row, rule: Box<dyn Rule>) -> Self {
         let col = first_row.len();
         Self {

@@ -159,14 +159,15 @@ impl<'a> AutomatonAnalysis<'a> {
 
                 match pattern {
                     (None, None, None) => {
-                        period *= 2;
-                        if offset + period > current_diagonal.len() {
+                        period += 1;
+                        if (offset + period) > current_diagonal.len() {
                             breaked = true;
                             break;
                         }
                     }
                     (Some(p), Some(o), Some(t)) => {
                         result.push((p, o, t));
+                        break;
                     }
                     (_, _, _) => {
                         panic!("AAAAAAAAAAAa")
@@ -181,6 +182,7 @@ impl<'a> AutomatonAnalysis<'a> {
 
 
     fn find_pattern<'b>(&self, mut diagonal: Vec<&'b Cell>, start_offset: usize, period: usize) -> (Option<Vec<&'b Cell>>, Option<usize>, Option<usize>) {
+        assert!(period > 0, "find_pattern: Period should be stricly positive");
         let mut offset = start_offset;
 
         if diagonal.len() <= start_offset {
@@ -188,8 +190,7 @@ impl<'a> AutomatonAnalysis<'a> {
         }
         diagonal.drain(0..start_offset);
 
-        while   diagonal.len() > 1 &&
-            diagonal.len() > period
+        while diagonal.len() > 2 * period
         {
             if is_periodic(&diagonal, period) {
                 diagonal.truncate(period);
