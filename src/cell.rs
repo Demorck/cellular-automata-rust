@@ -1,6 +1,17 @@
+use std::ops::Not;
+
 #[derive(Clone, Debug)]
 pub struct Cell {
     state: u8,
+    is_fixed: bool,
+}
+
+impl Not for Cell {
+    type Output = (Cell);
+
+    fn not(self) -> Self::Output {
+        if self.state == 0 { Cell::new(1) } else { Cell::new(0) }
+    }
 }
 
 
@@ -13,7 +24,10 @@ impl PartialEq for Cell {
 
 impl Cell {
     pub fn new(state: u8) -> Cell {
-        Cell { state }
+        Cell {
+            state,
+            is_fixed: false,
+        }
     }
 
     pub fn state(&self) -> u8 {
@@ -24,11 +38,23 @@ impl Cell {
         self.state = state;
     }
 
+    pub fn is_fixed(&self) -> bool {
+        self.is_fixed
+    }
+
+    pub fn fix(&mut self) {
+        self.is_fixed = true
+    }
+
     pub fn display(&self) -> char {
         match self.state {
             0 => '.',
             1 => '#',
             _ => '?',
         }
+    }
+
+    pub fn to_string(&self) -> String {
+        self.state.to_string()
     }
 }
