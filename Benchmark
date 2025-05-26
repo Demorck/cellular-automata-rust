@@ -1,0 +1,2 @@
+evolve 100 steps        time:   [42.577 µs 43.046 µs 43.526 µs]
+init_grid               time:   [34.383 µs 34.684 µs 35.036 µs]

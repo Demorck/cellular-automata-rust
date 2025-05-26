@@ -107,7 +107,7 @@ impl<'a> AutomatonAnalysis<'a> {
     {
         let middle = (self.automaton.col() - 1)/2;
         let mut result: BTreeMap<u16, u16> = BTreeMap::new();
-        for i in 1..self.automaton.max_iteration() {
+        for i in 0..self.automaton.max_iteration() {
             let mut counter: u16 = 1;
             loop {
                 let index = middle + i - counter as usize;
@@ -159,18 +159,20 @@ impl<'a> AutomatonAnalysis<'a> {
 
                 match pattern {
                     (None, None, None) => {
-                        period += 1;
+                        period *= 2;
+                        println!("Increasing period to {} at {}", period, i);
                         if (offset + period) > current_diagonal.len() {
                             breaked = true;
                             break;
                         }
                     }
-                    (Some(p), Some(o), Some(t)) => {
-                        result.push((p, o, t));
-                        break;
-                    }
+                    // (Some(p), Some(o), Some(t)) => {
+                    //     result.push((p, o, t));
+                    //     break;
+                    // }
                     (_, _, _) => {
-                        panic!("AAAAAAAAAAAa")
+                        // panic!("AAAAAAAAAAAa")
+                        break;
                     }
                 }
             }

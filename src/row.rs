@@ -7,6 +7,15 @@ pub struct Row {
 }
 
 impl Row {
+    pub fn clone(&self) -> Row {
+        Self {
+            configuration: self.configuration.clone(),
+            iteration: self.iteration
+        }
+    }
+}
+
+impl Row {
     pub fn len(&self) -> usize {
         self.configuration.len()
     }
