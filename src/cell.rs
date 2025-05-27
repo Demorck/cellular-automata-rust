@@ -1,4 +1,4 @@
-use std::ops::Not;
+use std::ops::{BitOr, BitXor, Not};
 
 #[derive(Clone, Debug)]
 pub struct Cell {
@@ -18,6 +18,25 @@ impl Not for Cell {
 impl PartialEq for Cell {
     fn eq(&self, other: &Self) -> bool {
         self.state == other.state
+    }
+}
+
+impl BitOr for Cell {
+    type Output = Self;
+
+    fn bitor(self, rhs: Self) -> Self::Output {
+        let new_state = self.state | rhs.state;
+        Self::new(new_state)
+    }
+}
+
+impl BitXor for Cell {
+    type Output = Self;
+
+    fn bitxor(self, rhs: Self) -> Self::Output {
+        let new_state = self.state ^ rhs.state;
+        Self::new(new_state)
+
     }
 }
 

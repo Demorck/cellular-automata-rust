@@ -1,6 +1,8 @@
+use std::ops::Deref;
 use cellular_automaton::automaton::Automaton;
 use cellular_automaton::automaton_analysis::{AutomatonAnalysis, DIAGONAL};
 use cellular_automaton::cell::Cell;
+use cellular_automaton::diagonal::Fast30;
 use cellular_automaton::pattern::Pattern;
 use cellular_automaton::row::Row;
 use cellular_automaton::rules::{Rule30, WolframRule};
@@ -8,26 +10,26 @@ use cellular_automaton::rules::{Rule30, WolframRule};
 const ITERATION: usize = 150_000;
 
 fn main() {
-    let size = if ITERATION % 2 == 0 { ITERATION + 1 } else { ITERATION };
-    let milieu = (size - 1) / 2;
-
-    // Configuration initiale : tout à 0 sauf le centre
-    let mut config = vec![Cell::new(0); size];
-    config[milieu] = Cell::new(1);
-
-    // Création de la première ligne
-    let first_row = Row::new(config);
-
-    let rule = Box::new(WolframRule::new(30));
-    // Initialisation de l'automate avec une seule ligne
-    let mut automaton = Automaton::new(first_row, rule);
-    automaton.evolve(ITERATION as u64);
-    println!("Automaton evolved for {} iterations.", ITERATION);
+    // let size = if ITERATION % 2 == 0 { ITERATION + 1 } else { ITERATION };
+    // let milieu = (size - 1) / 2;
     //
-    let mut analysis = AutomatonAnalysis::new(&automaton);
-    analysis.extract_diagonals(DIAGONAL::LEFT);
+    // // Configuration initiale : tout à 0 sauf le centre
+    // let mut config = vec![Cell::new(0); size];
+    // config[milieu] = Cell::new(1);
     //
-    let a = analysis.extract_patterns(DIAGONAL::LEFT, over_two);
+    // // Création de la première ligne
+    // let first_row = Row::new(config);
+    //
+    // let rule = Box::new(WolframRule::new(30));
+    // // Initialisation de l'automate avec une seule ligne
+    // let mut automaton = Automaton::new(first_row, rule);
+    // automaton.evolve(ITERATION as u64);
+    // println!("Automaton evolved for {} iterations.", ITERATION);
+    // //
+    // let mut analysis = AutomatonAnalysis::new(&automaton);
+    // analysis.extract_diagonals(DIAGONAL::LEFT);
+    // //
+    // let a = analysis.extract_patterns(DIAGONAL::LEFT, over_two);
 
 
 
@@ -39,18 +41,29 @@ fn main() {
     //     println!("Diagonal {}: {}, Period:  {}, Offset: {}", counter, s, p, o);
     // }
 
+    let mut fast = Fast30::new();
+    fast.evolve(50);
+    println!("{}", fast.to_string());
+
 
     // let first_diag = vec![Cell::new(1)];
     // let second_diag = vec![Cell::new(1)];
     //
     // let mut cell_type = Cell::new(1);
     // let mut pattern = Pattern::new(first_diag, second_diag);
-    // let mut index_double = Vec::with_capacity(10);
+    // let mut active_pattern = Vec::with_capacity(30);
+    // let mut index_double = Vec::with_capacity(30);
+    // active_pattern.push(&pattern);
+    //
+    // recurse_pattern(pattern, &cell_type, 0, &mut index_double);
     //
     //
     // for i in 1..1_000_000 {
     //     let last_pattern = pattern;
     //     pattern = last_pattern.next(Some(&cell_type));
+    //     if !pattern.contains(&cell_type) {
+    //
+    //     }
     //     if last_pattern.len() < pattern.len() {
     //         println!("Last pattern: {:?}", last_pattern.to_string());
     //         println!("New pattern: {}", pattern.to_string());
@@ -74,3 +87,30 @@ fn over_two(x: usize) -> usize {
 fn identite(x: usize) -> usize { x }
 
 fn zero(x: usize) -> usize { 0 }
+
+
+fn recurse_pattern(pattern: Pattern, cell_type: &Cell, start: usize, index_double: &mut Vec<usize>)
+{
+    let mut pattern =  pattern;
+    let cell_zero = Cell::new(0);
+    let cell_one = Cell::new(1);
+
+    for i in start..1_000_000 {
+        let last_pattern = pattern;
+        pattern = last_pattern.next(Some(cell_type));
+        if !pattern.contains(&cell_one) {
+            index_double.push(i + 2);
+
+            println!("Recursion at {} with default: 0", i);
+            recurse_pattern(pattern.clone(), &cell_zero, i, index_double);
+
+
+            println!("Recursion at {} with default: 1", i);
+            recurse_pattern(pattern.clone(), &cell_one, i, index_double);
+
+            index_double.remove(index_double.len() - 1);
+        }
+    }
+
+    println!("{:?}", index_double);
+}

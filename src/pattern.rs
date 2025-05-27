@@ -7,12 +7,25 @@ pub struct Pattern {
     center_pattern: Vec<Cell>,
 }
 
+impl Clone for Pattern {
+    fn clone(&self) -> Self {
+        Self {
+            left_pattern: self.left_pattern.clone(),
+            center_pattern: self.center_pattern.clone(),
+        }
+    }
+}
+
 impl Pattern {
     pub fn new(left_pattern: Vec<Cell>, center_pattern: Vec<Cell>) -> Pattern {
         Self {
             left_pattern,
             center_pattern,
         }
+    }
+
+    pub fn contains(&self, x: &Cell) -> bool {
+        self.center_pattern.contains(x)
     }
 
     pub fn len(&self) -> usize {
@@ -56,11 +69,11 @@ impl Pattern {
             let mut result: Vec<Cell> = vec![cell_type.clone(); new_size];
 
             let mut last_cell = cell_type.clone();
-            result[len - 1] = last_cell.clone();
+            result[0] = last_cell.clone();
 
             // Calculer la nouvelle ligne
-            for i in (0..len - 1).rev() {
-                last_cell.set_state(last_cell.state() ^ left_ref[i + 1].clone().state());
+            for i in (1..len) {
+                last_cell.set_state(last_cell.state() ^ left_ref[i - 1].clone().state());
                 result[i] = last_cell.clone();
             }
 
@@ -94,6 +107,11 @@ impl Pattern {
 
 
         result
+    }
+
+
+    pub fn get_center(&self) -> Vec<Cell> {
+        self.center_pattern.clone()
     }
 
 }

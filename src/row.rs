@@ -6,8 +6,8 @@ pub struct Row {
     iteration: usize
 }
 
-impl Row {
-    pub fn clone(&self) -> Row {
+impl Clone for Row {
+    fn clone(&self) -> Row {
         Self {
             configuration: self.configuration.clone(),
             iteration: self.iteration
