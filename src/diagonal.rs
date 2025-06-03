@@ -1,10 +1,14 @@
 use std::cmp::PartialEq;
+use std::ops::Div;
+use std::thread::current;
 use crate::cell::Cell;
 use crate::pattern::Pattern;
+use crate::rules::{Rule, Rule30, WolframRule};
+use crate::utils::is_periodic;
 
 pub struct Diagonal {
     pattern: Vec<Cell>,
-    transit: Vec<Cell>,
+    transit: Vec<Cell>
 }
 
 pub struct Fast30 {
@@ -12,12 +16,62 @@ pub struct Fast30 {
     current_pattern: Pattern,
     current_period: usize,
     is_doubling: bool,
+    iteration: usize
 }
 
 
 impl Diagonal {
     pub fn new(pattern: Vec<Cell>, transit: Vec<Cell>) -> Diagonal {
         Diagonal { pattern, transit }
+    }
+
+    pub fn get_last(&self, index: usize) -> Cell {
+        if index < 0 {
+            panic!("Index {} out of bounds", index);
+        }
+
+        if index <= self.transit.len() {
+            self.transit[index - 1].clone()
+        } else {
+            let tau = self.transit.len();
+            let pi = self.pattern.len();
+            if pi == 0 {
+                panic!("Diagonal pattern is empty");
+            }
+
+            let index = (index - 1 - tau) % pi;
+
+            self.pattern[index].clone()
+        }
+    }
+
+    pub fn has_state_in_pattern(&self, state: u8) -> bool {
+        self.pattern.contains(&Cell::new(state))
+    }
+
+    pub fn count_state_in_pattern(&self, state: u8) -> usize {
+        self.pattern.iter().filter(|&x| x == &Cell::new(state)).count()
+    }
+
+    pub fn to_string(&self) ->String {
+        let mut result = String::new();
+
+        let mut counter = 1;
+        result.push_str("Diagonal ");
+        result.push_str(counter.to_string().as_str());
+        result.push_str(" - Pattern: ");
+        self.pattern.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
+        result.push_str(" - Transit: ");
+        if !self.transit.is_empty()
+        {
+            let mut cloned = self.transit.clone();
+            // let trailing_zeros = (counter as f64 / 2.0).ceil() as usize;
+            // cloned.drain(0..trailing_zeros);
+            cloned.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
+        }
+        result.push_str("\n");
+
+        result
     }
 }
 
@@ -26,79 +80,77 @@ impl Fast30 {
         let mut first_cell = Cell::new(1);
         first_cell.fix();
         let first_diag = Diagonal::new(vec![first_cell.clone()], vec![]);
-        let second_diag = Diagonal::new(vec![first_cell], vec![]);
+        let second_diag = Diagonal::new(vec![first_cell], vec![Cell::new(0)]);
         let pattern = Pattern::new(vec!(Cell::new(0)), vec!(Cell::new(1)));
         Self {
             diagonals: vec![first_diag, second_diag],
             current_pattern: pattern,
             current_period: 1,
-            is_doubling: false
+            is_doubling: false,
+            iteration: 2
         }
     }
 
     pub fn next(&mut self)
     {
-        let last_diag = self.diagonals.last().unwrap();
-        // let len = self.diagonals.len() as isize;
-        let penultimate_diag = self.diagonals.get(self.diagonals.len() - 2).unwrap();
-        let is_current_diag_even = self.diagonals.len() % 2 == 0; // so the current one is even if the last is odd
-        let mut current_trans: Vec<Cell> = vec![];
-        let mut need_to_fix = false;
+        let leading_zeros = self.iteration.div_ceil(2);
+        let d_k1 = self.diagonals.last().unwrap();
+        let d_k2 = self.diagonals.get(self.diagonals.len() - 2).unwrap();
+        let mut result_transitoire: Vec<Cell> = Vec::new();
+        let mut result_motif: Vec<Cell> = Vec::new();
+        let mut result_complet = vec![Cell::new(0); leading_zeros];
+        let on_double = !d_k1.has_state_in_pattern(1) && d_k2.count_state_in_pattern(1) % 2 == 1;
+        if on_double {
+            self.current_period *= 2;
+            println!("On double à l'iteration: {}", self.iteration + 1);
+        }
 
-        let get_cell = |index: usize, diag: &Diagonal| {
-            /// Si on veut le i-ème bit de la diagonale, on regarde par rapport à la période de transition
-            /// Si le i-ème bit est au delà, alors on commence le motif
-            /// Si pendant le motif, on tombe sur un 1, ça fixe le motif actuel
-            return if index < diag.transit.len() {
-                diag.transit.get(index).unwrap().clone()
-            } else {
-                let cell = diag.pattern.get(index % diag.pattern.len()).unwrap();
-                cell.clone()
-            };
-        };
+        let mut dans_periode_k1 = false;
+        let mut dans_periode_k2 = false;
+        let mut dans_periode_k = false;
+        let mut j = 0;
+        let mut i = leading_zeros;
 
         loop {
-            let index = match is_current_diag_even {
-                true => { current_trans.len() }
-                false => {
-                    if (current_trans.len() as isize - 1) < 0 {
-                        0
-                    } else { current_trans.len() - 1 }
-                }
-            };
-            let center_cell = if !is_current_diag_even && index == 0 { Cell::new(0) } else {
-                let mut cell = get_cell(index, last_diag);
-                if cell.state() == 1 && cell.is_fixed() || self.is_doubling {
-                    need_to_fix = true;
-                    cell.fix();
-                    self.is_doubling = false;
-                }
-
-                cell
-            };
-            let left_cell = get_cell(current_trans.len(), penultimate_diag);
-            let right_cell = if current_trans.is_empty() { Cell::new(0) } else { current_trans.last().unwrap().clone() };
-
-            /// Si c'est fixé, ça veut dire qu'on est dans le motif du précédent ET qu'il y a eu un 1.
-            /// Le motif est fixé, on s'arrête là
-            if need_to_fix {
-                self.current_pattern = self.current_pattern.next(Some(&Cell::new(1)));
-                if !self.current_pattern.contains(&Cell::new(1))
-                {
-                    self.current_period *= 2;
-                    self.is_doubling = true;
-                }
-
-                let current_diag = Diagonal::new(self.current_pattern.get_center(), current_trans);
-                self.diagonals.push(current_diag);
+            if i > d_k1.transit.len() {
+                dans_periode_k1 = true;
+            }
+            if i > d_k2.transit.len() {
+                dans_periode_k2 = true;
+            }
+            if j == self.current_period {
                 break;
             }
 
-            /// Si le motif n'est pas fixé, on est soit en période de transition, on applique la règle
-            let new_cell = left_cell ^ (center_cell | right_cell);
-            current_trans.push(new_cell);
+            let etat_centre = d_k1.get_last(i);
+
+            let etat_gauche = d_k2.get_last(i);
+
+            let etat_droite = result_complet.last().unwrap();
+
+            let new_state = Rule30.apply(etat_gauche.state(), etat_centre.state(), etat_droite.state());
+            let new_cell = Cell::new(new_state);
+            // On est dans le cas général : période qui double pas + dans le motif du k-1 + centre fixé
+            if dans_periode_k1 {
+                if dans_periode_k2 && on_double || etat_centre.state() == 1 {
+                    dans_periode_k = true;
+                }
+                j += 1;
+                result_motif.push(new_cell.clone());
+                // result_transitoire.push(new_cell);
+            } else {
+                result_transitoire.push(new_cell.clone());
+            }
+
+            i += 1;
+
+            result_complet.push(new_cell);
         }
 
+        let new_diagonal = Diagonal::new(result_motif, result_complet);
+
+        self.diagonals.push(new_diagonal);
+        self.iteration += 1;
     }
 
     pub fn evolve(&mut self, steps: usize)
@@ -106,34 +158,12 @@ impl Fast30 {
         for _ in 0..steps
         {
             self.next();
+
+            // println!("{}", self.to_string());
         }
     }
 
-    // pub fn to_string(&self) ->String {
-    //     let mut result = String::new();
-    //     let max_len = self.grid.last().unwrap().len();
-    //     for line in self.grid.iter().rev() {
-    //         let space_to_add = (max_len - line.len()) / 2;
-    //
-    //         for _ in 0..space_to_add {
-    //             result.push(' ');
-    //         }
-    //
-    //         line.iter().for_each(|cell|{
-    //             result.push_str(&cell.to_string());
-    //         });
-    //
-    //         for _ in 0..space_to_add {
-    //             result.push(' ');
-    //         }
-    //
-    //         result.push_str("\n");
-    //     }
-    //
-    //     result
-    // }
-
-    pub fn to_string(&self) -> String {
+    pub fn to_string(&self, with_transit: bool) -> String {
         let mut result = String::new();
 
         let mut counter = 1;
@@ -143,7 +173,13 @@ impl Fast30 {
             result.push_str(" - Pattern: ");
             diagonal.pattern.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
             result.push_str(" - Transit: ");
-            diagonal.transit.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
+            if !diagonal.transit.is_empty() && with_transit
+            {
+                let mut cloned = diagonal.transit.clone();
+                // let trailing_zeros = (counter as f64 / 2.0).ceil() as usize;
+                // cloned.drain(0..trailing_zeros);
+                cloned.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
+            }
             result.push_str("\n");
             counter += 1;
 

@@ -52,9 +52,9 @@ impl Pattern {
                 let index_to = (i + start_position - 1) % len;
 
                 if center_ref[index] == cell_type {
-                    last_cell = !left_ref[index].clone();
+                    last_cell = !left_ref[index % left_ref.len()].clone();
                 } else {
-                    last_cell.set_state(last_cell.state() ^ left_ref[index].clone().state());
+                    last_cell.set_state(last_cell.state() ^ left_ref[index % left_ref.len()].clone().state());
                 }
 
                 result[index_to] = last_cell.clone();
@@ -68,7 +68,11 @@ impl Pattern {
             let new_size = len;
             let mut result: Vec<Cell> = vec![cell_type.clone(); new_size];
 
-            let mut last_cell = cell_type.clone();
+            let mut last_cell = if number_one % 2 == 1 {
+                cell_type.clone()
+            } else {
+                Cell::new(0)
+            };
             result[0] = last_cell.clone();
 
             // Calculer la nouvelle ligne

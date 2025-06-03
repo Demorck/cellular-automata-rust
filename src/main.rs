@@ -42,8 +42,22 @@ fn main() {
     // }
 
     let mut fast = Fast30::new();
-    fast.evolve(50);
-    println!("{}", fast.to_string());
+    fast.evolve(100_000);
+    // println!("{}", fast.to_string(false));
+    // let vec1 = vec![1; 40];
+    // let mut vec2 = vec![0];
+    // for _ in 0..40 {
+    //     vec2.push(1);
+    // }
+    //
+    // let diag = fast.next_2(vec2.clone(), vec1.clone(), 2);
+    // println!("{:?}", diag);
+    //
+    // let diag1 = fast.next_2(diag.clone(), vec1.clone(), 3);
+    // println!("{:?}", diag1);
+    //
+    // let diag2 = fast.next_2(diag1.clone(), diag.clone(), 4);
+    // println!("{:?}", diag2);
 
 
     // let first_diag = vec![Cell::new(1)];
@@ -55,14 +69,14 @@ fn main() {
     // let mut index_double = Vec::with_capacity(30);
     // active_pattern.push(&pattern);
     //
-    // recurse_pattern(pattern, &cell_type, 0, &mut index_double);
+    // // recurse_pattern(pattern, &cell_type, 0, &mut index_double);
     //
     //
     // for i in 1..1_000_000 {
     //     let last_pattern = pattern;
     //     pattern = last_pattern.next(Some(&cell_type));
     //     if !pattern.contains(&cell_type) {
-    //
+    //         println!("{}", i);
     //     }
     //     if last_pattern.len() < pattern.len() {
     //         println!("Last pattern: {:?}", last_pattern.to_string());

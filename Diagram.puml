@@ -50,6 +50,25 @@ class WolframRule implements Rule {
     - rule_number: u8
 }
 
+class Pattern implements Clone {
+    ---
+    + contains(x: &Cell) : bool
+    + len() : usize
+    + next(default_cell: Option<U+003C>&Cell<U+003E>) : Pattern
+}
+
+class Diagonal {
+
+}
+
+class Fast30 {
+    - current_period: usize,
+    - is_doubling: bool
+    ---
+    + next()
+    + evolve(steps: usize)
+}
+
 
 Automaton -- "*" Row
 Row -- "*" Cell
@@ -57,5 +76,14 @@ Automaton -- "1" Rule
 AutomatonAnalysis -- "1" Automaton
 AutomatonAnalysis -- "*" Cell
 
+Pattern -- "*" Cell
+Pattern -- "*" Cell
+
+
+Diagonal -up- "*" Cell
+Diagonal -up- "*" Cell
+
+Fast30 -left- "*" Diagonal
+Fast30 -left- "1" Pattern
 
 @enduml
