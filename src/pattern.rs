@@ -24,6 +24,10 @@ impl Pattern {
         }
     }
 
+    pub fn count_state_in_left(&self, state: u8) -> usize {
+        self.left_pattern.iter().filter(|&x| x == &Cell::new(state)).count()
+    }
+
     pub fn contains(&self, x: &Cell) -> bool {
         self.center_pattern.contains(x)
     }
@@ -44,7 +48,7 @@ impl Pattern {
         if center_ref.contains(&cell_type) {
             let mut result: Vec<Cell>  = vec![cell_type.clone(); len];
             let start_position = center_ref.iter().rposition(|p| p == &cell_type).unwrap();
-            let mut last_cell = Cell::new(100);
+            let mut last_cell = Cell::new(1);
 
             // Calculer la nouvelle ligne avec la règle 30
             for i in (1..=len).rev() {
@@ -71,12 +75,12 @@ impl Pattern {
             let mut last_cell = if number_one % 2 == 1 {
                 cell_type.clone()
             } else {
-                Cell::new(0)
+                default_cell.unwrap().clone()
             };
             result[0] = last_cell.clone();
 
             // Calculer la nouvelle ligne
-            for i in (1..len) {
+            for i in 1..len {
                 last_cell.set_state(last_cell.state() ^ left_ref[i - 1].clone().state());
                 result[i] = last_cell.clone();
             }
@@ -97,17 +101,17 @@ impl Pattern {
     pub fn to_string(&self) -> String {
         let mut result = String::new();
 
-        result.push_str("[");
+        // result.push_str("[");
 
-        self.left_pattern.iter().for_each(|cell| {
-            result.push_str(cell.to_string().as_str());
-        });
-        result.push_str(", ");
+        // self.left_pattern.iter().for_each(|cell| {
+        //     result.push_str(cell.to_string().as_str());
+        // });
+        // result.push_str(", ");
         self.center_pattern.iter().for_each(|cell| {
             result.push_str(cell.to_string().as_str());
         });
 
-        result.push_str("]");
+        // result.push_str("]");
 
 
         result

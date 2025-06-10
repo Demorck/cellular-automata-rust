@@ -7,7 +7,7 @@ pub struct Cell {
 }
 
 impl Not for Cell {
-    type Output = (Cell);
+    type Output = Cell;
 
     fn not(self) -> Self::Output {
         if self.state == 0 { Cell::new(1) } else { Cell::new(0) }

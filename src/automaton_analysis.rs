@@ -38,7 +38,7 @@ impl<'a> AutomatonAnalysis<'a> {
         }
     }
 
-    /// Extrait les diagonales et retourne un Vec<u8> pour chaque diagonale
+    /// Extrait les diagonales et retourne un `Vec<u8>` pour chaque diagonale
     pub fn extract_diagonals(
         &mut self,
         diagonal: DIAGONAL,

@@ -11,6 +11,15 @@ pub struct Diagonal {
     transit: Vec<Cell>
 }
 
+impl Clone for Diagonal {
+    fn clone(&self) -> Self {
+        Diagonal {
+            pattern: self.pattern.clone(),
+            transit: self.transit.clone()
+        }
+    }
+}
+
 pub struct Fast30 {
     diagonals: Vec<Diagonal>,
     current_pattern: Pattern,
@@ -148,17 +157,21 @@ impl Fast30 {
         }
 
         let new_diagonal = Diagonal::new(result_motif, result_complet);
+        let last = d_k1.clone();
+        self.diagonals = vec![last, new_diagonal];
 
-        self.diagonals.push(new_diagonal);
+        // self.diagonals.push(new_diagonal);
         self.iteration += 1;
     }
 
     pub fn evolve(&mut self, steps: usize)
     {
-        for _ in 0..steps
+        for i in 0..steps
         {
             self.next();
-
+            if i % 1000 == 0 {
+                println!("On arrive à {}", i);
+            }
             // println!("{}", self.to_string());
         }
     }
@@ -186,5 +199,10 @@ impl Fast30 {
         }
 
         result
+    }
+
+    fn elude_last_transition(&self)
+    {
+
     }
 }
