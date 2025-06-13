@@ -5,10 +5,14 @@ edition = "2024"
 
 [dependencies]
 rand = "0.9.1"
+flamegraph = "0.6.8"
 
 [dev-dependencies]
 criterion = "0.6.0"
 
+[profile.release]
+debug = true
+strip = false
 
 [[bench]]
 harness = false

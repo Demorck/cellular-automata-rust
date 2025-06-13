@@ -1,14 +1,30 @@
-use std::cmp::PartialEq;
-use std::ops::Div;
-use std::thread::current;
-use crate::cell::Cell;
-use crate::pattern::Pattern;
-use crate::rules::{Rule, Rule30, WolframRule};
-use crate::utils::is_periodic;
+use std::mem::swap;
 
 pub struct Diagonal {
-    pattern: Vec<Cell>,
-    transit: Vec<Cell>
+    pattern: Vec<u8>,
+    transit: Vec<u8>
+}
+
+impl Diagonal {
+    pub fn clear(&mut self) {
+        self.transit.clear();
+        self.pattern.clear();
+    }
+
+    pub fn push_transit(&mut self, state: u8)
+    {
+        self.transit.push(state);
+    }
+
+    pub fn push_pattern(&mut self, state: u8) {
+        self.pattern.push(state);
+    }
+
+    pub fn set(&mut self, new: Diagonal)
+    {
+        self.transit = new.transit;
+        self.pattern = new.pattern;
+    }
 }
 
 impl Clone for Diagonal {
@@ -21,24 +37,20 @@ impl Clone for Diagonal {
 }
 
 pub struct Fast30 {
-    diagonals: Vec<Diagonal>,
-    current_pattern: Pattern,
+    last_diagonal: Box<Diagonal>,
+    penult_diagonal: Box<Diagonal>,
+    current_diagonal: Box<Diagonal>,
     current_period: usize,
-    is_doubling: bool,
     iteration: usize
 }
 
 
 impl Diagonal {
-    pub fn new(pattern: Vec<Cell>, transit: Vec<Cell>) -> Diagonal {
+    pub fn new(pattern: Vec<u8>, transit: Vec<u8>) -> Diagonal {
         Diagonal { pattern, transit }
     }
 
-    pub fn get_last(&self, index: usize) -> Cell {
-        if index < 0 {
-            panic!("Index {} out of bounds", index);
-        }
-
+    pub fn get_last(&self, index: usize) -> u8 {
         if index <= self.transit.len() {
             self.transit[index - 1].clone()
         } else {
@@ -55,154 +67,100 @@ impl Diagonal {
     }
 
     pub fn has_state_in_pattern(&self, state: u8) -> bool {
-        self.pattern.contains(&Cell::new(state))
+        self.pattern.contains(&state)
     }
 
     pub fn count_state_in_pattern(&self, state: u8) -> usize {
-        self.pattern.iter().filter(|&x| x == &Cell::new(state)).count()
-    }
-
-    pub fn to_string(&self) ->String {
-        let mut result = String::new();
-
-        let mut counter = 1;
-        result.push_str("Diagonal ");
-        result.push_str(counter.to_string().as_str());
-        result.push_str(" - Pattern: ");
-        self.pattern.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
-        result.push_str(" - Transit: ");
-        if !self.transit.is_empty()
-        {
-            let mut cloned = self.transit.clone();
-            // let trailing_zeros = (counter as f64 / 2.0).ceil() as usize;
-            // cloned.drain(0..trailing_zeros);
-            cloned.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
-        }
-        result.push_str("\n");
-
-        result
+        self.pattern.iter().filter(|&x| x == &state).count()
     }
 }
 
 impl Fast30 {
-    pub fn new() -> Fast30 {
-        let mut first_cell = Cell::new(1);
-        first_cell.fix();
-        let first_diag = Diagonal::new(vec![first_cell.clone()], vec![]);
-        let second_diag = Diagonal::new(vec![first_cell], vec![Cell::new(0)]);
-        let pattern = Pattern::new(vec!(Cell::new(0)), vec!(Cell::new(1)));
+    pub fn new() -> Self {
+        let mut penult_diagonal = Diagonal::new(Vec::with_capacity(64), Vec::with_capacity(1_000_000));
+        penult_diagonal.pattern.push(1);
+
+        let mut last_diagonal=  Diagonal::new(Vec::with_capacity(64), Vec::with_capacity(1_000_000));
+        last_diagonal.pattern.push(1);
+        last_diagonal.transit.push(0);
+
+        let current_diagonal = Diagonal::new(Vec::with_capacity(64), Vec::with_capacity(1_000_000));
         Self {
-            diagonals: vec![first_diag, second_diag],
-            current_pattern: pattern,
+            last_diagonal: Box::new(last_diagonal),
+            penult_diagonal: Box::new(penult_diagonal),
+            current_diagonal: Box::new(current_diagonal),
             current_period: 1,
-            is_doubling: false,
             iteration: 2
         }
     }
 
-    pub fn next(&mut self)
+    fn next(&mut self)
     {
-        let leading_zeros = self.iteration.div_ceil(2);
-        let d_k1 = self.diagonals.last().unwrap();
-        let d_k2 = self.diagonals.get(self.diagonals.len() - 2).unwrap();
-        let mut result_transitoire: Vec<Cell> = Vec::new();
-        let mut result_motif: Vec<Cell> = Vec::new();
-        let mut result_complet = vec![Cell::new(0); leading_zeros];
-        let on_double = !d_k1.has_state_in_pattern(1) && d_k2.count_state_in_pattern(1) % 2 == 1;
-        if on_double {
+        let d_k1 = &self.last_diagonal;
+        let tau_k1 = d_k1.transit.len();
+        let pi_k1 = d_k1.pattern.len();
+
+        let d_k2 = &self.penult_diagonal;
+        let tau_k2 = d_k2.transit.len();
+        let pi_k2 = d_k2.pattern.len();
+
+        if self.is_doubling() {
             self.current_period *= 2;
-            println!("On double à l'iteration: {}", self.iteration + 1);
+            // println!("On double à l'iteration: {}", self.iteration + 1);
         }
 
-        let mut dans_periode_k1 = false;
-        let mut dans_periode_k2 = false;
-        let mut dans_periode_k = false;
+        self.current_diagonal.transit.clear();
+        self.current_diagonal.pattern.clear();
+
+        // self.current_diagonal.transit.reserve(100_000);
+        // self.current_diagonal.pattern.reserve(self.current_period);
+
+        self.current_diagonal.transit.push(0);
+
         let mut j = 0;
-        let mut i = leading_zeros;
+        let mut i = 1;
 
-        loop {
-            if i > d_k1.transit.len() {
-                dans_periode_k1 = true;
-            }
-            if i > d_k2.transit.len() {
-                dans_periode_k2 = true;
-            }
-            if j == self.current_period {
-                break;
-            }
+        let mut last_state = 0;
 
-            let etat_centre = d_k1.get_last(i);
-
-            let etat_gauche = d_k2.get_last(i);
-
-            let etat_droite = result_complet.last().unwrap();
-
-            let new_state = Rule30.apply(etat_gauche.state(), etat_centre.state(), etat_droite.state());
-            let new_cell = Cell::new(new_state);
-            // On est dans le cas général : période qui double pas + dans le motif du k-1 + centre fixé
-            if dans_periode_k1 {
-                if dans_periode_k2 && on_double || etat_centre.state() == 1 {
-                    dans_periode_k = true;
-                }
-                j += 1;
-                result_motif.push(new_cell.clone());
-                // result_transitoire.push(new_cell);
+        while j < self.current_period {
+            let etat_centre = if i <= tau_k1 {
+                unsafe { *d_k1.transit.get_unchecked(i - 1) }
             } else {
-                result_transitoire.push(new_cell.clone());
+                unsafe { *d_k1.pattern.get_unchecked((i - 1 - tau_k1) % pi_k1) }
+            };
+            let etat_gauche = if i <= tau_k2 {
+                unsafe { *d_k2.transit.get_unchecked(i - 1) }
+            } else {
+                unsafe { *d_k2.pattern.get_unchecked((i - 1 - tau_k2) % pi_k2) }
+            };
+
+            last_state = etat_gauche ^ (etat_centre | last_state);
+
+            self.current_diagonal.transit.push(last_state);
+
+            if i > tau_k1 {
+                j += 1;
+                self.current_diagonal.pattern.push(last_state);
             }
-
             i += 1;
-
-            result_complet.push(new_cell);
         }
 
-        let new_diagonal = Diagonal::new(result_motif, result_complet);
-        let last = d_k1.clone();
-        self.diagonals = vec![last, new_diagonal];
 
-        // self.diagonals.push(new_diagonal);
+        swap(&mut self.penult_diagonal, &mut self.last_diagonal);
+        swap(&mut self.last_diagonal, &mut self.current_diagonal);
+
         self.iteration += 1;
+    }
+
+    fn is_doubling(&self) -> bool {
+        !self.last_diagonal.has_state_in_pattern(1) && self.penult_diagonal.count_state_in_pattern(1) % 2 == 1
     }
 
     pub fn evolve(&mut self, steps: usize)
     {
-        for i in 0..steps
+        for _ in 0..steps
         {
-            self.next();
-            if i % 1000 == 0 {
-                println!("On arrive à {}", i);
-            }
-            // println!("{}", self.to_string());
+             self.next();
         }
-    }
-
-    pub fn to_string(&self, with_transit: bool) -> String {
-        let mut result = String::new();
-
-        let mut counter = 1;
-        for diagonal in &self.diagonals {
-            result.push_str("Diagonal ");
-            result.push_str(counter.to_string().as_str());
-            result.push_str(" - Pattern: ");
-            diagonal.pattern.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
-            result.push_str(" - Transit: ");
-            if !diagonal.transit.is_empty() && with_transit
-            {
-                let mut cloned = diagonal.transit.clone();
-                // let trailing_zeros = (counter as f64 / 2.0).ceil() as usize;
-                // cloned.drain(0..trailing_zeros);
-                cloned.iter().for_each(|cell| result.push_str(cell.to_string().as_str()));
-            }
-            result.push_str("\n");
-            counter += 1;
-
-        }
-
-        result
-    }
-
-    fn elude_last_transition(&self)
-    {
-
     }
 }

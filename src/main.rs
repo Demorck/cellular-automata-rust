@@ -1,94 +1,78 @@
-use std::fs::{File, OpenOptions};
-use std::hash::RandomState;
-use std::ops::Deref;
-use rand::Rng;
-use cellular_automaton::automaton::Automaton;
-use cellular_automaton::automaton_analysis::{AutomatonAnalysis, DIAGONAL};
 use cellular_automaton::cell::Cell;
-use cellular_automaton::diagonal::Fast30;
+use cellular_automaton::diagonal::{Fast30};
 use cellular_automaton::pattern::Pattern;
-use cellular_automaton::row::Row;
-use cellular_automaton::rules::{Rule30, WolframRule};
-
-const ITERATION: usize = 150_000;
 
 fn main() {
-    // let size = if ITERATION % 2 == 0 { ITERATION + 1 } else { ITERATION };
-    // let milieu = (size - 1) / 2;
-    //
-    // // Configuration initiale : tout à 0 sauf le centre
-    // let mut config = vec![Cell::new(0); size];
-    // config[milieu] = Cell::new(1);
-    //
-    // // Création de la première ligne
-    // let first_row = Row::new(config);
-    //
+    // let mut config = vec![Cell::new(0); 2001];
+    // config[1000] = Cell::new(1);
     // let rule = Box::new(WolframRule::new(30));
-    // // Initialisation de l'automate avec une seule ligne
-    // let mut automaton = Automaton::new(first_row, rule);
-    // automaton.evolve(ITERATION as u64);
-    // println!("Automaton evolved for {} iterations.", ITERATION);
-    // //
+    // let mut automaton = Automaton::new(Row::new(config), rule);
+    //
+    // automaton.evolve(1000);
+    //
+    // // println!("{}", automaton.to_string());
+    //
     // let mut analysis = AutomatonAnalysis::new(&automaton);
     // analysis.extract_diagonals(DIAGONAL::LEFT);
-    // //
-    // let a = analysis.extract_patterns(DIAGONAL::LEFT, over_two);
-
-
-
+    // let a = analysis.extract_patterns(DIAGONAL::LEFT, zero);
     //
-    // let mut counter = 0;
-    // for (d, p, o) in a {
-    //     counter += 1;
-    //     let s: String = d.iter().map(|&cell| cell.state().to_string()).collect();
-    //     println!("Diagonal {}: {}, Period:  {}, Offset: {}", counter, s, p, o);
+    // let mut i = 1;
+    // for (x, _, _) in a {
+    //     if !x.contains(&&Cell::new(1))
+    //     {
+    //         println!("On double à {}", i + 2);
+    //     }
+    //
+    //     i += 1;
     // }
 
 
-    let first_diag = vec![Cell::new(1)];
-    let second_diag = vec![Cell::new(1)];
 
-    let cell_zero = Cell::new(0);
-    let cell_one = Cell::new(1);
-    let mut rng = rand::rng();
 
-    let mut cell_type = Cell::new(1);
-    let mut breaked = false;
-    let mut j = 0;
+    // let first_diag = vec![Cell::new(1)];
+    // let second_diag = vec![Cell::new(1)];
+    //
+    // let cell_zero = Cell::new(0);
+    // let cell_one = Cell::new(1);
+    // let mut rng = rand::rng();
+    //
+    // let mut cell_type = Cell::new(1);
+    // let mut breaked = false;
+    // let mut j = 0;
+    //
+    // let mut file = OpenOptions::new()
+    //     .create(true)
+    //     .write(true)
+    //     .truncate(true) // ou append(false)
+    //     .open("output/pattern.txt")
+    //     .expect("Unable to open file");
+    // let mut counter = 0;
+    // let mut pattern = Pattern::new(first_diag.clone(), second_diag.clone());
+    // //
+    // for i in 0..100_000_000 {
+    //     if !pattern.contains(&cell_one) {
+    //         if pattern.count_state_in_left(1) % 2 == 0 {
+    //             if counter % 2 == 0 {
+    //                 cell_type = Cell::new(0);
+    //             } else {
+    //                 cell_type = Cell::new(1);
+    //             }
+    //             println!("Hop, on double pas ici: {}", i);
+    //             counter += 1;
+    //         } else {
+    //             cell_type = Cell::new(1);
+    //             println!("Hop, on double de fou ici: {}", i);
+    //         }
+    //     }
+    //
+    //     pattern = pattern.next(Some(&cell_type.clone()));
+    //
+    //     let string = format!("{};{}", i, pattern.to_string());
+    //     write_line(&mut file, string.as_str()).expect("TODO: panic message");
+    // }
 
-    let mut file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true) // ou append(false)
-        .open("output/pattern.txt")
-        .expect("Unable to open file");
-    let mut counter = 0;
-    let mut pattern = Pattern::new(first_diag.clone(), second_diag.clone());
-
-    for i in 0..100_000_000 {
-        if !pattern.contains(&cell_one) {
-            if pattern.count_state_in_left(1) % 2 == 0 {
-                if counter % 2 == 0 {
-                    cell_type = Cell::new(0);
-                } else {
-                    cell_type = Cell::new(1);
-                }
-                println!("Hop, on double pas ici: {}", i);
-                counter += 1;
-            } else {
-                cell_type = Cell::new(1);
-                println!("Hop, on double de fou ici: {}", i);
-            }
-        }
-
-        pattern = pattern.next(Some(&cell_type.clone()));
-
-        // let string = format!("{};{}", i, pattern.to_string());
-        // write_line(&mut file, string.as_str()).expect("TODO: panic message");
-    }
-
-    // let mut fast = Fast30::new();
-    // fast.evolve(100_000);
+    let fast = &mut Fast30::new();
+    fast.evolve(10_000);
     // println!("{}", fast.to_string(false));
     // let vec1 = vec![1; 40];
     // let mut vec2 = vec![0];
@@ -140,15 +124,18 @@ fn main() {
     // println!("{:?}", index_double);
 }
 
+#[allow(dead_code)]
 fn over_two(x: usize) -> usize {
     if x > 100 { x / 2 } else { x }
 }
 
+#[allow(dead_code)]
 fn identite(x: usize) -> usize { x }
 
-fn zero(x: usize) -> usize { 0 }
+#[allow(dead_code)]
+fn zero(_x: usize) -> usize { 0 }
 
-
+#[allow(dead_code)]
 fn recurse_pattern(pattern: Pattern, cell_type: &Cell, start: usize, index_double: &mut Vec<usize>)
 {
     let mut pattern =  pattern;
@@ -175,6 +162,7 @@ fn recurse_pattern(pattern: Pattern, cell_type: &Cell, start: usize, index_doubl
     println!("{:?}", index_double);
 }
 
+#[allow(dead_code)]
 fn write_line(file: &mut std::fs::File, data: &str) -> std::io::Result<()> {
     use std::io::Write;
     writeln!(file, "{}", data)

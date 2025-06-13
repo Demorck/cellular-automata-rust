@@ -1,4 +1,3 @@
-use std::cmp::PartialEq;
 use crate::cell::Cell;
 
 pub fn is_periodic(diagonal: &Vec<&Cell>, period: usize) -> bool

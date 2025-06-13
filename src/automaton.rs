@@ -50,4 +50,8 @@ impl Automaton {
     pub fn max_iteration(&self) -> usize {
         max(self.col, self.iteration)
     }
+
+    pub fn to_string(&self) -> String {
+        self.grid.iter().map(|r| r.to_string() + "\n").collect()
+    }
 }

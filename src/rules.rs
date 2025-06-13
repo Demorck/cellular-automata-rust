@@ -22,7 +22,6 @@ pub struct WolframRule {
 
 impl WolframRule {
     pub fn new(rule_number: u8) -> Self {
-        assert!(rule_number <= 255, "rule_number must be between 0 and 255");
         Self { rule_number }
     }
 }

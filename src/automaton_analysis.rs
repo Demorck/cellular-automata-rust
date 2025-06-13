@@ -160,16 +160,15 @@ impl<'a> AutomatonAnalysis<'a> {
                 match pattern {
                     (None, None, None) => {
                         period *= 2;
-                        println!("Increasing period to {} at {}", period, i);
                         if (offset + period) > current_diagonal.len() {
                             breaked = true;
                             break;
                         }
                     }
-                    // (Some(p), Some(o), Some(t)) => {
-                    //     result.push((p, o, t));
-                    //     break;
-                    // }
+                    (Some(p), Some(o), Some(t)) => {
+                        result.push((p, o, t));
+                        break;
+                    }
                     (_, _, _) => {
                         // panic!("AAAAAAAAAAAa")
                         break;
