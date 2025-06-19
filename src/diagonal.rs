@@ -120,18 +120,21 @@ impl Fast30 {
         let mut j = 0;
         let mut i = 1;
 
+        let mut idx_k1 = 0;
+        let mut idx_k2 = 0;
+
         let mut last_state = 0;
 
         while j < self.current_period {
             let etat_centre = if i <= tau_k1 {
                 unsafe { *d_k1.transit.get_unchecked(i - 1) }
             } else {
-                unsafe { *d_k1.pattern.get_unchecked((i - 1 - tau_k1) % pi_k1) }
+                unsafe { *d_k1.pattern.get_unchecked(idx_k1) }
             };
             let etat_gauche = if i <= tau_k2 {
                 unsafe { *d_k2.transit.get_unchecked(i - 1) }
             } else {
-                unsafe { *d_k2.pattern.get_unchecked((i - 1 - tau_k2) % pi_k2) }
+                unsafe { *d_k2.pattern.get_unchecked(idx_k2) }
             };
 
             last_state = etat_gauche ^ (etat_centre | last_state);
@@ -141,6 +144,16 @@ impl Fast30 {
             if i > tau_k1 {
                 j += 1;
                 self.current_diagonal.pattern.push(last_state);
+
+                idx_k1 += 1;
+                if idx_k1 == pi_k1 {
+                    idx_k1 = 0;
+                }
+
+                idx_k2 += 1;
+                if idx_k2 == pi_k2 {
+                    idx_k2 = 0;
+                }
             }
             i += 1;
         }

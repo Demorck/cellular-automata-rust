@@ -1,2 +1,43 @@
 evolve 100 steps        time:   [42.577 µs 43.046 µs 43.526 µs]
 init_grid               time:   [34.383 µs 34.684 µs 35.036 µs]
+
+
+
+evolution_comparison/Fast30/100
+                        time:   [213.19 µs 214.97 µs 217.54 µs]
+                        change: [−5.1187% −3.6175% −2.0112%] (p = 0.01 < 0.05)
+                        Performance has improved.
+
+evolution_comparison/Automaton/100
+                        time:   [48.792 µs 49.214 µs 49.912 µs]
+                        change: [+5.5260% +7.6752% +9.9362%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+
+
+
+evolution_comparison/Fast30/1000
+                        time:   [21.492 ms 21.968 ms 22.784 ms]
+                        change: [−4.7220% −2.2415% +0.2812%] (p = 0.19 > 0.05)
+                        No change in performance detected.
+evolution_comparison/Automaton/1000
+                        time:   [482.65 µs 489.02 µs 497.98 µs]
+                        change: [+5.6064% +8.1547% +10.488%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+
+
+
+evolution_comparison/Fast30/10000
+                        time:   [3.2279 s 3.3157 s 3.4084 s]
+                        change: [−17.924% −15.179% −12.239%] (p = 0.00 < 0.05)
+                        Performance has improved.
+evolution_comparison/Automaton/10000
+                        time:   [4.9774 ms 5.0375 ms 5.1123 ms]
+                        change: [+6.2803% +9.5711% +12.811%] (p = 0.00 < 0.05)
+                        Performance has regressed.
+
+
+
+evolution_comparison/Fast30/50000
+                        time:   [120.67 s 129.96 s 141.38 s]
+evolution_comparison/Automaton/50000
+                        time:   [30.133 ms 30.608 ms 31.015 ms]
