@@ -35,6 +35,23 @@ impl Pattern {
         }
     }
 
+    /// Crée un nouveau couple motif à partir d’une expression binaire à gauche et au centre
+    ///
+    /// ```text
+    /// let pattern = Pattern::new_from_binary("0111", "0000"); // Diagonale 30
+    /// ```
+    pub fn new_from_binary(left_pattern: &str, center_pattern: &str) -> Pattern {
+        let left_cells = left_pattern
+            .chars()
+            .map(|c| Cell::new(c.to_digit(10).unwrap() as u8))
+            .collect();
+        let center_cells = center_pattern
+            .chars()
+            .map(|c| Cell::new(c.to_digit(10).unwrap() as u8))
+            .collect();
+        Self::new(left_cells, center_cells)
+    }
+
     /// Compte le nombre d’occurrences d’un état donné dans la partie gauche du motif.
     ///
     /// ```text
@@ -105,11 +122,12 @@ impl Pattern {
                 let index = (i + start_position) % len;
                 let index_to = (i + start_position - 1) % len;
 
+                let idx = index % left_ref.len();
                 if center_ref[index] == cell_type {
-                    last_cell = !left_ref[index % left_ref.len()].clone();
+                    last_cell = !left_ref[idx].clone();
                 } else {
                     last_cell.set_state(
-                        last_cell.state() ^ left_ref[index % left_ref.len()].clone().state(),
+                        last_cell.state() ^ left_ref[idx].clone().state(),
                     );
                 }
 
@@ -150,9 +168,17 @@ impl Pattern {
     /// ```text
     /// pattern.to_string(); // Exemple : "00110"
     /// ```
-    pub fn to_string(&self) -> String {
+    pub fn to_string_center(&self) -> String {
         let mut result = String::new();
         self.center_pattern
+            .iter()
+            .for_each(|cell| result.push_str(cell.to_string().as_str()));
+        result
+    }
+
+    pub fn to_string_left(&self) -> String {
+        let mut result = String::new();
+        self.left_pattern
             .iter()
             .for_each(|cell| result.push_str(cell.to_string().as_str()));
         result

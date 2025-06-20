@@ -7,7 +7,7 @@ use std::ops::{BitAnd, BitOr, BitXor, Not};
 /// la manipulation et la comparaison des états des cellules.
 #[derive(Clone, Debug)]
 pub struct Cell {
-    state: u8
+    pub(crate) state: u8
 }
 
 impl Not for Cell {

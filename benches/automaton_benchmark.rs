@@ -37,18 +37,16 @@ pub fn automaton_benchmark(c: &mut Criterion) {
 
 pub fn automaton_pattern(c: &mut Criterion) {
     let mut group = c.benchmark_group("Pattern");
-    // &[100, 1_000, 2_000, 3_000, 4_000, 5_000, 10_000, 20_000, 30_000, 40_000, 50_000]
-    for &steps in &[100, 5_000, 10_000, 50_000, 100_000, 500_000, 1_000_000, 10_000_000, 100_000_000] {
+    group.sample_size(20);
+    let mut steps = vec![100, 5_000, 10_000, 50_000, 100_000];
+    steps.extend((500_000..=1_000_000).step_by(100_000));
+    for &steps in &steps {
         group.bench_with_input(BenchmarkId::new("Base", steps), &steps, |b, &s| {
             b.iter(|| {
-                let first_diag = vec![Cell::new(1)];
-                let second_diag = vec![Cell::new(1)];
-
-                let cell_zero = Cell::new(0);
                 let cell_one = Cell::new(1);
                 let mut cell_type = Cell::new(1);
                 let mut counter = 0;
-                let mut pattern = Pattern::new(first_diag.clone(), second_diag.clone());
+                let mut pattern = Pattern::new_from_binary("1", "1");
                 for i in 0..s {
                     if !pattern.contains(&cell_one) {
                         if pattern.count_state_in_left(1) % 2 == 0 {

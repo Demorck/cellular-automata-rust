@@ -1,0 +1,25 @@
+On double à l'itération: 3
+Gauche: 1
+Centre: 0
+-------------
+
+On double à l'itération: 8
+Gauche: 10
+Centre: 00
+-------------
+
+On double à l'itération: 29
+Gauche: 0111
+Centre: 0000
+-------------
+
+On double à l'itération: 400
+Gauche: 00110100
+Centre: 00000000
+-------------
+
+On double à l'itération: 87867
+Gauche: 0100010101000001
+Centre: 0000000000000000
+-------------
+
