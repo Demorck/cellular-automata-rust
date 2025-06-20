@@ -6,80 +6,63 @@ use cellular_automaton::pattern::Pattern;
 
 const START_DIAGONAL: i64 = 6_130_000_003;
 fn main() {
-    // let mut config = vec![Cell::new(0); 2001];
-    // config[1000] = Cell::new(1);
-    // let rule = Box::new(WolframRule::new(30));
-    // let mut automaton = Automaton::new(Row::new(config), rule);
-    //
-    // automaton.evolve(1000);
-    //
-    // // println!("{}", automaton.to_string());
-    //
-    // let mut analysis = AutomatonAnalysis::new(&automaton);
-    // analysis.extract_diagonals(DIAGONAL::LEFT);
-    // let a = analysis.extract_patterns(DIAGONAL::LEFT, zero);
-    //
-    // let mut i = 1;
-    // for (x, _, _) in a {
-    //     if !x.contains(&&Cell::new(1))
-    //     {
-    //         println!("On double à {}", i + 2);
-    //     }
-    //
-    //     i += 1;
-    // }
+
+    let mut fast = Fast30::new();
+    fast.evolve(500);
+    // fast.elude_diagonals();
+    // fast.evolve(20);
+    // println!("{}", fast.to_string())
 
 
-
-    let mut file = OpenOptions::new()
-        .create(true)
-        .write(true)
-        .truncate(true) // ou append(false)
-        .open("output/new_pattern.txt")
-        .expect("Unable to open file");
-
-    let cell_one = Cell::new(1);
-    let mut cell_type = Cell::new(1);
-    let mut counter = 0;
+    // let mut file = OpenOptions::new()
+    //     .create(true)
+    //     .write(true)
+    //     .truncate(true) // ou append(false)
+    //     .open("output/new_pattern.txt")
+    //     .expect("Unable to open file");
+    //
+    // let cell_one = Cell::new(1);
+    // let mut cell_type = Cell::new(1);
+    // let mut counter = 0;
 
     // iteration
     // let mut pattern = Pattern::new(vec![Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(1),Cell::new(1),Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(1),Cell::new(1),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(1),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(1)], vec![Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(1),Cell::new(1),Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(0),Cell::new(1),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(0),Cell::new(1),Cell::new(1)]);
-    let mut pattern = Pattern::new_from_binary(
-        "1011110101101100100110111100110111101011110101100001000110000101",
-        "1110001110101000011100011101101000110011010100010000000100111011"
-    );
-
-    for i in START_DIAGONAL..30_000_000_000 {
-        if i % 1_000_000_000 == 0 {
-            let string = format!("Iteration: {}, Counter: {}, Pattern length: {}", i, counter, pattern.len());
-            write_line(&mut file, &*string).expect("Problème d'écriture dans le fichier");
-
-            let string = format!("Gauche: {}", pattern.to_string_left());
-            write_line(&mut file, &*string).expect("TODO: panic message");
-
-            let string = format!("Centre: {}", pattern.to_string_center());
-            write_line(&mut file, &*string).expect("TODO: panic message");
-        }
-        if i % 1_000_000_000 == 0 {
-            println!("Iteration: {}", i);
-        }
-        if !pattern.contains(&cell_one) {
-            if pattern.count_state_in_left(1) % 2 == 0 {
-                if counter % 2 == 0 {
-                    cell_type = Cell::new(0);
-                } else {
-                    cell_type = Cell::new(1);
-                }
-                write_double_pas(&pattern, i);
-                counter += 1;
-            } else {
-                cell_type = Cell::new(1);
-                write_double(&pattern, i);
-            }
-        }
-
-        pattern = pattern.next(Some(&cell_type.clone()));
-    }
+    // let mut pattern = Pattern::new_from_binary(
+    //     "1011110101101100100110111100110111101011110101100001000110000101",
+    //     "1110001110101000011100011101101000110011010100010000000100111011"
+    // );
+    //
+    // for i in START_DIAGONAL..30_000_000_000 {
+    //     if i % 1_000_000_000 == 0 {
+    //         let string = format!("Iteration: {}, Counter: {}, Pattern length: {}", i, counter, pattern.len());
+    //         write_line(&mut file, &*string).expect("Problème d'écriture dans le fichier");
+    //
+    //         let string = format!("Gauche: {}", pattern.to_string_left());
+    //         write_line(&mut file, &*string).expect("TODO: panic message");
+    //
+    //         let string = format!("Centre: {}", pattern.to_string_center());
+    //         write_line(&mut file, &*string).expect("TODO: panic message");
+    //     }
+    //     if i % 1_000_000_000 == 0 {
+    //         println!("Iteration: {}", i);
+    //     }
+    //     if !pattern.contains(&cell_one) {
+    //         if pattern.count_state_in_left(1) % 2 == 0 {
+    //             if counter % 2 == 0 {
+    //                 cell_type = Cell::new(0);
+    //             } else {
+    //                 cell_type = Cell::new(1);
+    //             }
+    //             write_double_pas(&pattern, i);
+    //             counter += 1;
+    //         } else {
+    //             cell_type = Cell::new(1);
+    //             write_double(&pattern, i);
+    //         }
+    //     }
+    //
+    //     pattern = pattern.next(Some(&cell_type.clone()));
+    // }
 }
 
 fn write_double(pattern: &Pattern, i: i64) {
