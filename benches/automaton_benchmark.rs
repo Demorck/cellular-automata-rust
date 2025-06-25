@@ -85,5 +85,22 @@ pub fn bench_chelou(c: &mut Criterion) {
     });
 }
 
-criterion_group!(benches, automaton_pattern);
+pub fn fast30(c: &mut Criterion) {
+    let mut group = c.benchmark_group("Fast30");
+    group.sample_size(10);
+    let elude = 2;
+    let steps = 1_000_000;
+    let id = BenchmarkId::new(format!("Base_s{}", steps), elude);
+    group.bench_with_input(id, &steps, |b, &s| {
+        b.iter(|| {
+            let mut fast = Fast30::new();
+            fast.set_steps_elude(black_box(elude));
+            fast.evolve(black_box(s));
+        });
+    });
+
+    group.finish();
+}
+
+criterion_group!(benches, fast30);
 criterion_main!(benches);

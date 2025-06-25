@@ -222,7 +222,7 @@ impl Fast30 {
     {
         if self.is_doubling() {
             self.current_period *= 2;
-            println!("On double à l'iteration: {}", self.iteration + 1);
+            // println!("On double à l'iteration: {}", self.iteration + 1);
 
             // self.elude_diagonals();
             // println!("{}", self.to_string())
@@ -293,6 +293,11 @@ impl Fast30 {
         swap(&mut self.last_diagonal, &mut self.current_diagonal);
 
         self.iteration += 1;
+    }
+
+    pub fn set_steps_elude(&mut self, steps: usize)
+    {
+        self.elude_diagonal_steps = steps;
     }
 
     fn is_doubling(&self) -> bool {
