@@ -1,7 +1,5 @@
-use std::cmp::max;
 use std::mem::swap;
-use crate::cell::Cell;
-use crate::pattern::Pattern;
+use std::time::Instant;
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Diagonal {
@@ -86,13 +84,9 @@ impl Diagonal {
     // [0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1] - [1, 0, 0, 1] => [1, 1, 0, 0,]
     pub fn elude_transit(&mut self)
     {
-        let mut counter = 0;
-        let tau = self.transit.len();
         let pi = self.pattern.len();
-        let mut idx_transit = tau - 1;
-        let mut idx_pattern = pi - 1;
         loop {
-            if  self.transit.len() <= 1 || pi <= 1 {
+            if  self.transit.len() <= 1 {
                 break;
             }
             let state_pattern = self.pattern.last().unwrap();
@@ -103,15 +97,23 @@ impl Diagonal {
             } else {
                 break;
             }
-
-            // idx_pattern = if idx_pattern == 0 { self.pattern.len() - 1} else { idx_pattern - 1 };
-            // idx_transit = if idx_transit == 0 { self.transit.len() - 1 } else { idx_transit - 1 };
-            counter += 1;
             self.pattern.rotate_right(1);
         }
-        //
-        // let rotate = counter % self.pattern.len();
-        // self.pattern.rotate_right(rotate);
+
+        let mut state = 1;
+        loop {
+            let o_state = self.transit.first();
+            if o_state.is_none() {
+                break;
+            }
+
+            state = *o_state.unwrap();
+            if state == 0 && self.transit.len() > 1 {
+                self.transit.remove(0);
+            } else {
+                break;
+            }
+        }
 
         self.transit.append(&mut self.pattern.clone());
     }
@@ -195,7 +197,11 @@ pub struct Fast30 {
     current_diagonal: Box<Diagonal>,
     current_period: usize,
     iteration: usize,
-    elude_diagonal_steps: usize
+    elude_diagonal_steps: usize,
+    save_steps: usize,
+    start_time: Instant,
+    path_to_file: String,
+    last_save: Option<Instant>,
 }
 
 impl Fast30 {
@@ -214,7 +220,11 @@ impl Fast30 {
             current_diagonal: Box::new(current_diagonal),
             current_period: 1,
             iteration: 2,
-            elude_diagonal_steps: 20
+            elude_diagonal_steps: 10,
+            save_steps: 100_000,
+            path_to_file: "output/diagonal.txt".to_string(),
+            start_time: Instant::now(),
+            last_save: None
         }
     }
 
@@ -222,7 +232,7 @@ impl Fast30 {
     {
         if self.is_doubling() {
             self.current_period *= 2;
-            // println!("On double à l'iteration: {}", self.iteration + 1);
+            println!("On double à l'iteration: {}", self.iteration + 1);
 
             // self.elude_diagonals();
             // println!("{}", self.to_string())
@@ -312,6 +322,10 @@ impl Fast30 {
             if self.iteration % self.elude_diagonal_steps == 0 {
                 self.elude_diagonals(false);
             }
+
+            if self.iteration % self.save_steps == 0 {
+                self.save_to_file();
+            }
         }
     }
 
@@ -336,4 +350,35 @@ impl Fast30 {
 
         result
     }
+
+    fn save_to_file(&mut self) {
+        use std::fs::OpenOptions;
+        use std::io::Write;
+
+        let now = Instant::now();
+
+        let time_since_start = now.duration_since(self.start_time).as_secs();
+        let time_since_last = self.last_save.map_or(0, |prev| now.duration_since(prev).as_secs());
+
+        self.last_save = Some(now);
+
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .truncate(true)
+            .open(&self.path_to_file)
+            .expect("Unable to open file");
+
+        let content = format!(
+            "Iteration: {} | since start: {}s | since last: {}s\n{}\n",
+            self.iteration,
+            time_since_start,
+            time_since_last,
+            self.to_string()
+        );
+
+        file.write_all(content.as_bytes())
+            .expect("Unable to write to file");
+    }
+
 }
