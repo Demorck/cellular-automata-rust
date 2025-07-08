@@ -4,14 +4,16 @@ use std::time::Instant;
 #[derive(Debug, PartialEq, Eq)]
 pub struct Diagonal {
     pattern: Vec<u8>,
-    transit: Vec<u8>
+    transit: Vec<u8>,
+    leading_zeros: usize,
 }
 
 impl Clone for Diagonal {
     fn clone(&self) -> Self {
         Diagonal {
             pattern: self.pattern.clone(),
-            transit: self.transit.clone()
+            transit: self.transit.clone(),
+            leading_zeros: 0
         }
     }
 }
@@ -19,7 +21,7 @@ impl Clone for Diagonal {
 
 impl Diagonal {
     pub fn new(pattern: Vec<u8>, transit: Vec<u8>) -> Diagonal {
-        Diagonal { pattern, transit }
+        Diagonal { pattern, transit, leading_zeros: 0 }
     }
 
     pub fn new_from_binary(transit: &str, pattern: &str) -> Diagonal {
@@ -54,6 +56,7 @@ impl Diagonal {
     {
         self.transit = new.transit;
         self.pattern = new.pattern;
+        self.leading_zeros = new.leading_zeros;
     }
 
     pub fn get_last(&self, index: usize) -> u8 {
@@ -80,8 +83,6 @@ impl Diagonal {
         self.pattern.iter().filter(|&x| x == &state).count()
     }
 
-
-    // [0, 1, 0, 1, 1, 0, 1, 1, 1, 0, 0, 1] - [1, 0, 0, 1] => [1, 1, 0, 0,]
     pub fn elude_transit(&mut self)
     {
         let pi = self.pattern.len();
@@ -100,22 +101,29 @@ impl Diagonal {
             self.pattern.rotate_right(1);
         }
 
-        let mut state = 1;
-        loop {
-            let o_state = self.transit.first();
-            if o_state.is_none() {
-                break;
-            }
-
-            state = *o_state.unwrap();
-            if state == 0 && self.transit.len() > 1 {
-                self.transit.remove(0);
-            } else {
-                break;
-            }
-        }
-
         self.transit.append(&mut self.pattern.clone());
+    }
+
+    pub fn get_from_index(&self, i: usize) -> u8 {
+        let tau = self.transit.len();
+        let pi = self.pattern.len();
+        let zeta = self.leading_zeros;
+
+        if i <= zeta { 0 } else if i <= tau + zeta {
+            let k = i - zeta - 1;
+            *self.transit.get(k).unwrap()
+        } else {
+            let k = (i - tau - zeta - 1) % pi;
+            *self.pattern.get(k).unwrap()
+        }
+    }
+
+    pub fn set_leading_zeros(&mut self, zeros: usize) {
+        self.leading_zeros = zeros;
+    }
+
+    pub fn leading_zeros(&self) -> usize {
+        self.leading_zeros
     }
 
     pub fn to_string(&self) -> String {
@@ -187,7 +195,36 @@ mod tests {
         let mut diagonal = Diagonal::new_from_binary("01101101101110101101010110011001100110", "0110");
         diagonal.elude_transit();
         let needed = Diagonal::new_from_binary("0110110110111010110101", "0110");
-        assert_eq!(diagonal, needed)
+        assert_eq!(diagonal, needed);
+
+
+        // let mut diagonal = Diagonal::new_from_binary("000000000000000000000001101101101110101101010110011001100110", "0110");
+        // diagonal.elude_transit();
+        // let needed = Diagonal::new_from_binary("0110110110111010110101", "0110");
+        // assert_eq!(diagonal, needed)
+    }
+
+    #[test]
+    fn test_get_from_index_without_leading() {
+        let diagonal = Diagonal::new_from_binary("0000101010101010", "11001100");
+        assert_eq!(diagonal.get_from_index(1), 0);
+        assert_eq!(diagonal.get_from_index(5), 1);
+        assert_eq!(diagonal.get_from_index(10), 0);
+        assert_eq!(diagonal.get_from_index(15), 1);
+        assert_eq!(diagonal.get_from_index(20), 0);
+        assert_eq!(diagonal.get_from_index(25), 1);
+    }
+
+    #[test]
+    fn test_get_from_index_with_leading() {
+        let mut diagonal = Diagonal::new_from_binary("101010101010", "11001100");
+        diagonal.set_leading_zeros(4);
+        assert_eq!(diagonal.get_from_index(1), 0);
+        assert_eq!(diagonal.get_from_index(5), 1);
+        assert_eq!(diagonal.get_from_index(10), 0);
+        assert_eq!(diagonal.get_from_index(15), 1);
+        assert_eq!(diagonal.get_from_index(20), 0);
+        assert_eq!(diagonal.get_from_index(25), 1);
     }
 }
 
@@ -202,6 +239,8 @@ pub struct Fast30 {
     start_time: Instant,
     path_to_file: String,
     last_save: Option<Instant>,
+    logging: bool,
+    logging_steps: usize,
 }
 
 impl Fast30 {
@@ -211,7 +250,7 @@ impl Fast30 {
 
         let mut last_diagonal=  Diagonal::new(Vec::with_capacity(64), Vec::with_capacity(1_000_000));
         last_diagonal.pattern.push(1);
-        last_diagonal.transit.push(0);
+        last_diagonal.leading_zeros = 0;
 
         let current_diagonal = Diagonal::new(Vec::with_capacity(64), Vec::with_capacity(1_000_000));
         Self {
@@ -220,11 +259,13 @@ impl Fast30 {
             current_diagonal: Box::new(current_diagonal),
             current_period: 1,
             iteration: 2,
-            elude_diagonal_steps: 10,
-            save_steps: 100_000,
+            elude_diagonal_steps: 100,
+            save_steps: 10_000,
             path_to_file: "output/diagonal.txt".to_string(),
             start_time: Instant::now(),
-            last_save: None
+            last_save: None,
+            logging: true,
+            logging_steps: 1_000_000,
         }
     }
 
@@ -240,69 +281,42 @@ impl Fast30 {
 
         let d_k1 = &self.last_diagonal;
         let tau_k1 = d_k1.transit.len();
-        let pi_k1 = d_k1.pattern.len();
+        let zeta_k1 = d_k1.leading_zeros;
 
         let d_k2 = &self.penult_diagonal;
         let tau_k2 = d_k2.transit.len();
-        let pi_k2 = d_k2.pattern.len();
-
+        let zeta_k2 = d_k2.leading_zeros;
 
         self.current_diagonal.transit.clear();
         self.current_diagonal.pattern.clear();
 
-        self.current_diagonal.transit.push(0);
+        let number_zeros = (self.iteration + 1) / 2;
+        self.current_diagonal.set_leading_zeros(number_zeros);
 
         let mut j = 0;
-        let mut i = 1;
-
-        let mut idx_k1 = 0;
-        let mut idx_k2 = 0;
+        let mut i = number_zeros;
 
         let mut last_state = 0;
 
         while j < self.current_period {
-            let etat_centre = if i <= tau_k1 {
-                unsafe { *d_k1.transit.get_unchecked(i - 1) }
-            } else {
-                unsafe { *d_k1.pattern.get_unchecked(idx_k1) }
-            };
-            let etat_gauche = if i <= tau_k2 {
-                unsafe { *d_k2.transit.get_unchecked(i - 1) }
-            } else {
-                unsafe { *d_k2.pattern.get_unchecked(idx_k2) }
-            };
+            let etat_centre = d_k1.get_from_index(i);
+            let etat_gauche = d_k2.get_from_index(i);
 
             last_state = etat_gauche ^ (etat_centre | last_state);
 
             self.current_diagonal.transit.push(last_state);
 
-            if i > tau_k1 && i > tau_k2 {
+            if i > tau_k1 + zeta_k1 {
                 j += 1;
                 self.current_diagonal.pattern.push(last_state);
-            }
-
-            if i > tau_k1 {
-                idx_k1 += 1;
-                if idx_k1 == pi_k1 {
-                    idx_k1 = 0;
-                }
-            }
-
-            if i > tau_k2 {
-                idx_k2 += 1;
-                if idx_k2 == pi_k2 {
-                    idx_k2 = 0;
-                }
             }
 
             i += 1;
         }
 
-
+        // println!("[{}] New diagonal: {}", self.iteration, self.current_diagonal.to_string());
         swap(&mut self.penult_diagonal, &mut self.last_diagonal);
         swap(&mut self.last_diagonal, &mut self.current_diagonal);
-
-        self.iteration += 1;
     }
 
     pub fn set_steps_elude(&mut self, steps: usize)
@@ -318,13 +332,19 @@ impl Fast30 {
     {
         for _ in 0..steps
         {
-             self.next();
+            self.next();
+            self.iteration += 1;
+
             if self.iteration % self.elude_diagonal_steps == 0 {
                 self.elude_diagonals(false);
             }
 
             if self.iteration % self.save_steps == 0 {
                 self.save_to_file();
+            }
+
+            if self.iteration % self.logging_steps == 0 {
+                println!("Iteration: {}", self.iteration);
             }
         }
     }
@@ -344,9 +364,14 @@ impl Fast30 {
         let mut result = String::new();
         result.push_str("Last Diagonal:\n");
         result.push_str(self.last_diagonal.to_string().as_str());
+        result.push_str("Number of leading zeros: ");
+        result.push_str(&self.last_diagonal.leading_zeros.to_string());
+        result.push_str("\n");
 
         result.push_str("Penultimate Diagonal:\n");
         result.push_str(self.penult_diagonal.to_string().as_str());
+        result.push_str("Number of leading zeros: ");
+        result.push_str(&self.penult_diagonal.leading_zeros.to_string());
 
         result
     }

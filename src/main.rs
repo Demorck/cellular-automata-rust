@@ -8,7 +8,8 @@ const START_DIAGONAL: i64 = 6_130_000_003;
 fn main() {
 
     let mut fast = Fast30::new();
-    fast.evolve(100_000);
+    fast.evolve(3_000_000_000);
+
     // fast.elude_diagonals();
     // fast.evolve(20);
     // println!("{}", fast.to_string())
