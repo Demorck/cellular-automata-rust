@@ -88,7 +88,7 @@ pub fn bench_chelou(c: &mut Criterion) {
 pub fn fast30(c: &mut Criterion) {
     let mut group = c.benchmark_group("Fast30");
     group.sample_size(10);
-    let elude = 2;
+    let elude = 1;
     let steps = 1_000_000;
     let id = BenchmarkId::new(format!("Base_s{}", steps), elude);
     group.bench_with_input(id, &steps, |b, &s| {

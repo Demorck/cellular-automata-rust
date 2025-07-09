@@ -1,3 +1,5 @@
+use std::fs::OpenOptions;
+use std::io::Write;
 use std::mem::swap;
 use std::time::Instant;
 
@@ -235,12 +237,19 @@ pub struct Fast30 {
     current_period: usize,
     iteration: usize,
     elude_diagonal_steps: usize,
+
     save_steps: usize,
     start_time: Instant,
     path_to_file: String,
     last_save: Option<Instant>,
+
     logging: bool,
     logging_steps: usize,
+
+    transit: bool,
+    transit_steps: usize,
+    transit_vec: Vec<u32>,
+    last_transit: usize
 }
 
 impl Fast30 {
@@ -252,6 +261,8 @@ impl Fast30 {
         last_diagonal.pattern.push(1);
         last_diagonal.leading_zeros = 0;
 
+        let transit = Vec::with_capacity(1_000);
+
         let current_diagonal = Diagonal::new(Vec::with_capacity(64), Vec::with_capacity(1_000_000));
         Self {
             last_diagonal: Box::new(last_diagonal),
@@ -259,13 +270,20 @@ impl Fast30 {
             current_diagonal: Box::new(current_diagonal),
             current_period: 1,
             iteration: 2,
-            elude_diagonal_steps: 100,
-            save_steps: 10_000,
+            elude_diagonal_steps: 1,
+
+            save_steps: 100_000,
             path_to_file: "output/diagonal.txt".to_string(),
             start_time: Instant::now(),
             last_save: None,
+
             logging: true,
             logging_steps: 1_000_000,
+
+            transit: true,
+            transit_steps: 1_000,
+            transit_vec: transit,
+            last_transit: 0
         }
     }
 
@@ -306,7 +324,7 @@ impl Fast30 {
 
             self.current_diagonal.transit.push(last_state);
 
-            if i > tau_k1 + zeta_k1 {
+            if i > tau_k1 + zeta_k1 && i > tau_k2 + zeta_k2 {
                 j += 1;
                 self.current_diagonal.pattern.push(last_state);
             }
@@ -319,9 +337,18 @@ impl Fast30 {
         swap(&mut self.last_diagonal, &mut self.current_diagonal);
     }
 
-    pub fn set_steps_elude(&mut self, steps: usize)
+    pub fn set_steps_elude(&mut self, steps: usize) -> &mut Self
     {
         self.elude_diagonal_steps = steps;
+        self
+    }
+
+    pub fn set_transit_steps(&mut self, steps: usize) -> &mut Self
+    {
+        self.transit_steps = steps;
+        let new_vec = Vec::with_capacity(self.transit_steps);
+        self.transit_vec = new_vec;
+        self
     }
 
     fn is_doubling(&self) -> bool {
@@ -335,7 +362,7 @@ impl Fast30 {
             self.next();
             self.iteration += 1;
 
-            if self.iteration % self.elude_diagonal_steps == 0 {
+            if self.iteration % 2 == 0 {
                 self.elude_diagonals(false);
             }
 
@@ -343,8 +370,17 @@ impl Fast30 {
                 self.save_to_file();
             }
 
-            if self.iteration % self.logging_steps == 0 {
+            if self.logging && self.iteration % self.logging_steps == 0 {
                 println!("Iteration: {}", self.iteration);
+            }
+
+            if self.transit {
+                self.transit_vec.push((self.last_diagonal.transit.len() - self.current_period) as u32);
+            }
+
+            if self.iteration % self.transit_steps == 0 {
+                self.save_transit();
+                self.transit_vec.clear();
             }
         }
     }
@@ -401,6 +437,35 @@ impl Fast30 {
             time_since_last,
             self.to_string()
         );
+
+        file.write_all(content.as_bytes())
+            .expect("Unable to write to file");
+    }
+
+    fn save_transit(&mut self) {
+        let mut file = OpenOptions::new()
+            .create(true)
+            .write(true)
+            .append(true)
+            .open("output/transit.txt")
+            .expect("Unable to open file");
+
+        let mut content = "i;transit;diff\n".to_string();
+        let mut i = self.iteration - self.transit_steps;
+        let mut k = 0;
+        for transit in &self.transit_vec {
+            let delta = if i == 0 { 0 } else {
+                if k == 0 {
+                    self.last_transit as i32
+                } else {
+                    (*transit as i32) - (*self.transit_vec.get(k - 1).unwrap()) as i32
+                }
+            };
+
+            content.push_str(&format!("{};{};{}\n", i, transit, delta));
+            i += 1;
+            k += 1;
+        }
 
         file.write_all(content.as_bytes())
             .expect("Unable to write to file");

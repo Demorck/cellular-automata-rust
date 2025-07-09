@@ -7,7 +7,10 @@ use cellular_automaton::pattern::Pattern;
 const START_DIAGONAL: i64 = 6_130_000_003;
 fn main() {
 
-    let mut fast = Fast30::new();
+    let binding = Fast30::new();
+    let mut fast = binding;
+    fast.set_transit_steps(100_000)
+        .set_steps_elude(1);
     fast.evolve(3_000_000_000);
 
     // fast.elude_diagonals();
