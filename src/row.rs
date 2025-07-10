@@ -36,7 +36,7 @@ impl Row {
     /// Retourne une référence vers la cellule à l’indice donné, ou `None` si l’indice est hors limites.
     ///
     /// # Exemple
-    /// ```
+    /// ```text
     /// let row = Row::new(vec![Cell::new(0)]);
     /// assert!(row.get(0).is_some());
     /// assert!(row.get(1).is_none());
