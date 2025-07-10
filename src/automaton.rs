@@ -2,7 +2,6 @@ use std::cmp::max;
 use crate::row::Row;
 use crate::rules::Rule;
 
-///
 pub struct Automaton {
     grid: Vec<Row>,
     iteration: usize,

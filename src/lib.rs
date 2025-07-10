@@ -4,6 +4,6 @@ pub mod row;
 pub mod automaton;
 pub mod automaton_analysis;
 pub mod pattern;
-pub mod diagonal;
 mod utils;
+pub mod fast_30;
 
